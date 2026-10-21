@@ -1,943 +1,497 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>스터디 플래너 PWA</title>
-
-    <!-- iOS PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="스터디 플래너">
-    <meta name="theme-color" content="#1e293b">
-
-    <!-- Web App Manifest (Inline via Data URI) -->
-    <link rel="manifest" id="manifest-placeholder">
-
-    <!-- Tailwind CSS for UI Layout -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: {
-                            800: '#1e293b',
-                            900: '#0f172a',
-                        },
-                        planner: {
-                            bg: '#f8fafc',
-                            card: '#ffffff',
-                            border: '#e2e8f0',
-                            accent: '#3b82f6'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f1f5f9;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Lined Note Paper Effect */
-        .lined-paper {
-            background-image: linear-gradient(to bottom, transparent 95%, #e2e8f0 95%);
-            background-size: 100% 1.75rem;
-            line-height: 1.75rem;
-        }
-
-        /* Custom Scrollbar for Clean UI */
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스터디 플래너</title>
+  <link rel="manifest" href="data:application/manifest+json,&#123;%22name%22:%22스터디%20플래너%22,%22short_name%22:%22플래너%22,%22start_url%22:%22./%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f8fafc%22,%22theme_color%22:%22%231e293b%22&#125;">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
-    <!-- Top Installation Banner (PWA Home Screen Prompt) -->
-    <div id="installBanner" class="hidden bg-slate-900 text-white p-2.5 text-xs md:text-sm flex justify-between items-center shadow-lg sticky top-0 z-50">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="download" class="w-4 h-4 text-blue-400"></i>
-            <span>홈 화면에 앱으로 추가하여 인터넷 없이 사용하세요!</span>
-        </div>
+  <!-- Header -->
+  <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
+        <span class="text-xl">📚</span> 스터디 플래너
+      </h1>
+      <button id="pwaInstallBtn" class="hidden text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-full transition">
+        📲 앱 설치
+      </button>
+    </div>
+    <!-- Navigation Tabs -->
+    <nav class="flex border-t border-slate-800 bg-slate-900/95 backdrop-blur text-sm">
+      <button onclick="switchTab('daily')" id="tab-daily" class="flex-1 py-3 text-center font-semibold border-b-2 border-indigo-400 text-indigo-400 transition">일간</button>
+      <button onclick="switchTab('weekly')" id="tab-weekly" class="flex-1 py-3 text-center font-medium text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">주간</button>
+      <button onclick="switchTab('monthly')" id="tab-monthly" class="flex-1 py-3 text-center font-medium text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">월간 (시험)</button>
+      <button onclick="switchTab('subjects')" id="tab-subjects" class="flex-1 py-3 text-center font-medium text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">과목/타이머</button>
+    </nav>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 overflow-x-hidden">
+
+    <!-- DAILY VIEW -->
+    <section id="view-daily" class="space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-            <button id="installBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded-lg transition-colors text-xs">
-                설치하기
-            </button>
-            <button onclick="dismissInstallBanner()" class="text-slate-400 hover:text-white p-1">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
+          <input type="date" id="daily-date" onchange="loadDailyView()" class="bg-slate-100 font-bold text-slate-800 px-3 py-1.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <span id="daily-day-name" class="font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md text-sm border border-indigo-100"></span>
         </div>
-    </div>
+        <div class="flex-1 min-w-[240px]">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">🎯 주간 연동 목표</span>
+            <input type="text" id="daily-target" placeholder="오늘 이룰 목표를 적으세요..." oninput="saveDailyTarget()" class="w-full text-sm font-medium border-b border-slate-300 focus:border-indigo-500 focus:outline-none py-1 bg-transparent">
+          </div>
+        </div>
+      </div>
 
-    <!-- Main Container -->
-    <div class="max-w-6xl w-full mx-auto p-2 sm:p-4 flex-grow flex flex-col">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Time Table -->
+        <div class="lg:col-span-5 bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
+          <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">🕒 시간표 (06:00 ~ 00:00)</span>
+            <span class="text-[11px] font-normal text-slate-500">🔁 체크 시 매주 요일 반복</span>
+          </h3>
+          <div id="timetable-list" class="space-y-1.5 max-h-[550px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- To-Do & Notes -->
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex-1">
+            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+              <span>✅ 오늘 할 일 (To-Do)</span>
+              <span id="todo-stats" class="text-xs font-normal text-slate-500">0/0 완료</span>
+            </h3>
+            <div class="flex gap-2 mb-3">
+              <input type="text" id="new-todo-input" placeholder="할 일 추가..." onkeypress="if(event.key==='Enter') addTodo()" class="flex-1 text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <button onclick="addTodo()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition">추가</button>
+            </div>
+            <ul id="todo-list" class="space-y-2 max-h-[220px] overflow-y-auto pr-1"></ul>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
+            <h3 class="font-bold text-slate-800 text-sm mb-2">📝 메모</h3>
+            <textarea id="daily-memo" oninput="saveDailyMemo()" rows="5" placeholder="공부 일지, 피드백, 메모 작성..." class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WEEKLY VIEW -->
+    <section id="view-weekly" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold text-slate-600">주간 기준일:</span>
+          <input type="date" id="weekly-date" onchange="loadWeeklyView()" class="bg-slate-100 font-bold text-slate-800 px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
+        </div>
+        <span class="text-xs text-slate-500 font-medium">✨ 한눈에 보는 7일 계획</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        <template id="weekly-day-template">
+          <div class="day-card bg-white rounded-xl shadow-sm border border-slate-200/80 p-2.5 flex flex-col h-[520px]">
+            <div class="flex items-center justify-between border-b pb-1.5 mb-2">
+              <div class="day-title font-bold text-sm text-slate-800">월 (10/19)</div>
+              <button class="go-daily-btn text-[10px] bg-slate-100 hover:bg-indigo-50 text-indigo-600 font-semibold px-1.5 py-0.5 rounded">일간보기</button>
+            </div>
+            <div class="mb-2">
+              <label class="text-[11px] font-bold text-indigo-600 block mb-0.5">🎯 목표</label>
+              <textarea class="weekly-target w-full text-xs p-1.5 bg-indigo-50/50 border border-indigo-100 rounded focus:outline-none resize-none" rows="2" placeholder="목표 입력..."></textarea>
+            </div>
+            <div class="flex-1 flex flex-col overflow-hidden">
+              <label class="text-[11px] font-bold text-slate-600 block mb-0.5">📝 주간 할 일 / 계획</label>
+              <textarea class="weekly-notes w-full flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:outline-none resize-none leading-relaxed" placeholder="- 과목 공부&#10;- 학원 수업"></textarea>
+            </div>
+          </div>
+        </template>
+        <div id="weekly-grid-container" class="contents"></div>
+      </div>
+    </section>
+
+    <!-- MONTHLY VIEW (EXAM) -->
+    <section id="view-monthly" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <input type="month" id="monthly-picker" onchange="loadMonthlyView()" class="bg-slate-100 font-bold text-slate-800 px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
+        </div>
+        <span class="text-xs font-semibold text-rose-500 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">🚩 시험기간 과목 플래너</span>
+      </div>
+
+      <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-200/80 overflow-x-auto">
+        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 mb-2 min-w-[600px]">
+          <div class="text-rose-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-indigo-600">토</div>
+        </div>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 min-w-[600px]"></div>
+      </div>
+    </section>
+
+    <!-- SUBJECTS & TIMER -->
+    <section id="view-subjects" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
+        <h3 class="font-bold text-slate-800 text-sm mb-3">📚 과목 추가 및 타이머</h3>
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="new-subject-name" placeholder="과목명 (예: 수학 II)" class="flex-1 text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none">
+          <input type="color" id="new-subject-color" value="#4f46e5" class="w-10 h-9 p-0.5 border border-slate-300 rounded-lg cursor-pointer">
+          <button onclick="addSubject()" class="bg-indigo-600 text-white text-sm font-medium px-4 py-1.5 rounded-lg">추가</button>
+        </div>
+        <div id="subjects-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal for Monthly Day Detail -->
+  <div id="exam-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 id="modal-date-title" class="font-bold text-slate-800">2026-10-20 공부할 과목</h4>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-slate-500 mb-1 block">과목/시험 일정 추가</label>
+        <div class="flex gap-2">
+          <input type="text" id="modal-subject-input" placeholder="예: 국어 중간고사" class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none">
+          <button onclick="addExamSubject()" class="bg-rose-500 text-white text-sm px-3 py-1.5 rounded-lg font-medium">추가</button>
+        </div>
+      </div>
+      <ul id="modal-subject-list" class="space-y-1.5 max-h-48 overflow-y-auto"></ul>
+      <button onclick="closeModal()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm">닫기</button>
+    </div>
+  </div>
+
+  <script>
+    const HOURS = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00","00:00"];
+    const WEEKDAYS = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+    let store = JSON.parse(localStorage.getItem('study_planner_db') || '{"daily":{},"weekly":{},"monthly":{},"routines":{},"subjects":[]}');
+
+    function saveStore() { localStorage.setItem('study_planner_db', JSON.stringify(store)); }
+
+    function switchTab(tab) {
+      ['daily','weekly','monthly','subjects'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if(t === tab) {
+          btn.className = "flex-1 py-3 text-center font-semibold border-b-2 border-indigo-400 text-indigo-400 transition";
+        } else {
+          btn.className = "flex-1 py-3 text-center font-medium text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition";
+        }
+      });
+      if(tab === 'weekly') loadWeeklyView();
+      if(tab === 'monthly') loadMonthlyView();
+      if(tab === 'subjects') renderSubjects();
+    }
+
+    // --- DAILY LOGIC ---
+    function initDaily() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('daily-date').value = today;
+      loadDailyView();
+    }
+
+    function loadDailyView() {
+      const date = document.getElementById('daily-date').value;
+      const d = new Date(date + 'T00:00:00');
+      const dayIdx = d.getDay();
+      document.getElementById('daily-day-name').innerText = WEEKDAYS[dayIdx];
+
+      store.daily[date] = store.daily[date] || { todos: [], memo: "", timeTable: {} };
+      const data = store.daily[date];
+
+      // Sync Daily Target with Weekly Day Target
+      const mondayStr = getMondayDate(date);
+      store.weekly[mondayStr] = store.weekly[mondayStr] || {};
+      document.getElementById('daily-target').value = store.weekly[mondayStr][`target_${dayIdx}`] || "";
+
+      // Timetable rendering with Routine Support
+      const ttContainer = document.getElementById('timetable-list');
+      ttContainer.innerHTML = '';
+      HOURS.forEach(h => {
+        const key = `h_${h}`;
+        const savedVal = data.timeTable[key] || "";
+        const routineVal = (store.routines[dayIdx] && store.routines[dayIdx][key]) || "";
+        const displayVal = savedVal || routineVal;
+        const isRoutine = !savedVal && !!routineVal;
+
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-2 text-xs";
+        div.innerHTML = `
+          <span class="w-11 font-semibold text-slate-400">${h}</span>
+          <input type="text" value="${displayVal}" placeholder="일정 입력..." 
+            onchange="saveTimeSlot('${date}', '${key}', this.value)"
+            class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:bg-white focus:outline-none ${isRoutine ? 'text-indigo-600 italic' : ''}">
+          <label class="flex items-center gap-0.5 text-[10px] text-slate-400 cursor-pointer">
+            <input type="checkbox" ${routineVal ? 'checked' : ''} onchange="toggleRoutine(${dayIdx}, '${key}', this)" class="rounded text-indigo-600"> 반복
+          </label>
+        `;
+        ttContainer.appendChild(div);
+      });
+
+      renderTodos();
+      document.getElementById('daily-memo').value = data.memo || "";
+    }
+
+    function saveDailyTarget() {
+      const date = document.getElementById('daily-date').value;
+      const dayIdx = new Date(date + 'T00:00:00').getDay();
+      const mondayStr = getMondayDate(date);
+      store.weekly[mondayStr] = store.weekly[mondayStr] || {};
+      store.weekly[mondayStr][`target_${dayIdx}`] = document.getElementById('daily-target').value;
+      saveStore();
+    }
+
+    function saveTimeSlot(date, key, val) {
+      store.daily[date].timeTable[key] = val;
+      saveStore();
+    }
+
+    function toggleRoutine(dayIdx, key, chk) {
+      store.routines[dayIdx] = store.routines[dayIdx] || {};
+      if(chk.checked) {
+        const date = document.getElementById('daily-date').value;
+        store.routines[dayIdx][key] = store.daily[date].timeTable[key] || "반복 일정";
+      } else {
+        delete store.routines[dayIdx][key];
+      }
+      saveStore();
+      loadDailyView();
+    }
+
+    function addTodo() {
+      const input = document.getElementById('new-todo-input');
+      if(!input.value.trim()) return;
+      const date = document.getElementById('daily-date').value;
+      store.daily[date].todos.push({ text: input.value.trim(), done: false });
+      input.value = '';
+      saveStore();
+      renderTodos();
+    }
+
+    function renderTodos() {
+      const date = document.getElementById('daily-date').value;
+      const todos = store.daily[date].todos || [];
+      const list = document.getElementById('todo-list');
+      list.innerHTML = '';
+      let doneCount = 0;
+
+      todos.forEach((t, i) => {
+        if(t.done) doneCount++;
+        const li = document.createElement('li');
+        li.className = "flex items-center justify-between bg-slate-50 p-2 rounded-lg text-xs border border-slate-200/60";
+        li.innerHTML = `
+          <label class="flex items-center gap-2 cursor-pointer flex-1">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${i})" class="rounded text-indigo-600">
+            <span class="${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${t.text}</span>
+          </label>
+          <button onclick="deleteTodo(${i})" class="text-slate-400 hover:text-rose-500">✕</button>
+        `;
+        list.appendChild(li);
+      });
+      document.getElementById('todo-stats').innerText = `${doneCount}/${todos.length} 완료`;
+    }
+
+    function toggleTodo(i) {
+      const date = document.getElementById('daily-date').value;
+      store.daily[date].todos[i].done = !store.daily[date].todos[i].done;
+      saveStore();
+      renderTodos();
+    }
+
+    function deleteTodo(i) {
+      const date = document.getElementById('daily-date').value;
+      store.daily[date].todos.splice(i, 1);
+      saveStore();
+      renderTodos();
+    }
+
+    function saveDailyMemo() {
+      const date = document.getElementById('daily-date').value;
+      store.daily[date].memo = document.getElementById('daily-memo').value;
+      saveStore();
+    }
+
+    // --- WEEKLY LOGIC ---
+    function getMondayDate(dStr) {
+      const d = new Date(dStr + 'T00:00:00');
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(d.setDate(diff)).toISOString().split('T')[0];
+    }
+
+    function loadWeeklyView() {
+      let dateVal = document.getElementById('weekly-date').value;
+      if(!dateVal) {
+        dateVal = new Date().toISOString().split('T')[0];
+        document.getElementById('weekly-date').value = dateVal;
+      }
+      const mondayStr = getMondayDate(dateVal);
+      store.weekly[mondayStr] = store.weekly[mondayStr] || {};
+      const wData = store.weekly[mondayStr];
+
+      const container = document.getElementById('weekly-grid-container');
+      container.innerHTML = '';
+      const template = document.getElementById('weekly-day-template');
+
+      const dayNames = ["월","화","수","목","금","토","일"];
+      for(let i=0; i<7; i++) {
+        const curr = new Date(mondayStr + 'T00:00:00');
+        curr.setDate(curr.getDate() + i);
+        const currStr = curr.toISOString().split('T')[0];
+        const dayIdx = curr.getDay();
+
+        const clone = template.content.cloneNode(true);
+        clone.querySelector('.day-title').innerText = `${dayNames[i]} (${curr.getMonth()+1}/${curr.getDate()})`;
         
-        <!-- Navigation Tabs Top Bar -->
-        <nav class="grid grid-cols-4 gap-1.5 sm:gap-2 mb-3 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
-            <button onclick="switchTab('daily')" id="tab-daily" class="tab-btn py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-center transition-all bg-slate-800 text-white shadow">
-                일간
-            </button>
-            <button onclick="switchTab('weekly')" id="tab-weekly" class="tab-btn py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-center transition-all text-slate-600 hover:bg-slate-100">
-                주간
-            </button>
-            <button onclick="switchTab('monthly')" id="tab-monthly" class="tab-btn py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-center transition-all text-slate-600 hover:bg-slate-100">
-                월간 (시험대비)
-            </button>
-            <button onclick="switchTab('subject')" id="tab-subject" class="tab-btn py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-center transition-all text-slate-600 hover:bg-slate-100">
-                과목별 시간
-            </button>
-        </nav>
+        const targetTA = clone.querySelector('.weekly-target');
+        targetTA.value = wData[`target_${dayIdx}`] || "";
+        targetTA.oninput = (e) => { wData[`target_${dayIdx}`] = e.target.value; saveStore(); };
 
-        <!-- Main Content Card Container -->
-        <main class="bg-white rounded-3xl p-3 sm:p-5 shadow-sm border border-slate-200 flex-grow flex flex-col justify-between">
+        const notesTA = clone.querySelector('.weekly-notes');
+        notesTA.value = wData[`notes_${dayIdx}`] || "";
+        notesTA.oninput = (e) => { wData[`notes_${dayIdx}`] = e.target.value; saveStore(); };
 
-            <!-- ================= DAILY VIEW ================= -->
-            <section id="view-daily" class="tab-content flex flex-col space-y-4">
-                <!-- Date Selector Header -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-medium text-slate-500 text-sm">날짜</span>
-                        <input type="date" id="daily-date" class="bg-slate-100 border border-slate-200 text-slate-800 text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold" onchange="loadDailyData()">
-                    </div>
-                </div>
+        clone.querySelector('.go-daily-btn').onclick = () => {
+          document.getElementById('daily-date').value = currStr;
+          switchTab('daily');
+          loadDailyView();
+        };
 
-                <!-- Today Goal Input -->
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-slate-400">오늘의 목표</label>
-                    <input type="text" id="daily-goal" placeholder="오늘 이룰 핵심 목표를 적어보세요..." class="w-full bg-slate-50 border-b border-slate-200 text-slate-800 text-sm py-1.5 focus:outline-none focus:border-blue-500 transition-colors" oninput="saveDailyData()">
-                </div>
+        container.appendChild(clone);
+      }
+    }
 
-                <!-- 2 Column Layout (Time Table & To-Do / Note) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                    
-                    <!-- Left: Time Table -->
-                    <div class="border border-slate-200 rounded-2xl p-3 bg-slate-50/50">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-slate-700 text-xs sm:text-sm flex items-center gap-1.5">
-                                <i data-lucide="clock" class="w-4 h-4 text-blue-500"></i> 시간표
-                            </h3>
-                            <span class="text-[11px] text-slate-400">클릭하여 일정 작성</span>
-                        </div>
-                        <div class="divide-y divide-slate-100 max-h-[460px] overflow-y-auto pr-1" id="timetable-container">
-                            <!-- Hourly rows dynamically injected -->
-                        </div>
-                    </div>
+    // --- MONTHLY LOGIC ---
+    let selectedModalDate = "";
+    function loadMonthlyView() {
+      let monthVal = document.getElementById('monthly-picker').value;
+      if(!monthVal) {
+        monthVal = new Date().toISOString().slice(0, 7);
+        document.getElementById('monthly-picker').value = monthVal;
+      }
 
-                    <!-- Right Column: To-Do & Notes -->
-                    <div class="flex flex-col space-y-4">
-                        
-                        <!-- To-Do Section -->
-                        <div class="border border-slate-200 rounded-2xl p-3 bg-slate-50/50 flex-1 flex flex-col">
-                            <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-bold text-slate-700 text-xs sm:text-sm flex items-center gap-1.5">
-                                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-500"></i> 할 일
-                                </h3>
-                                <span id="todo-count" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">0/0</span>
-                            </div>
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
 
-                            <!-- Add Todo Input -->
-                            <div class="flex gap-2 mb-2">
-                                <input type="text" id="todo-input" placeholder="새 할 일 추가..." class="flex-grow bg-white border border-slate-200 text-xs sm:text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500" onkeypress="if(event.key === 'Enter') addTodo()">
-                                <button onclick="addTodo()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-colors">
-                                    추가
-                                </button>
-                            </div>
+      const [year, month] = monthVal.split('-').map(Number);
+      const firstDay = new Date(year, month - 1, 1).getDay();
+      const lastDate = new Date(year, month, 0).getDate();
 
-                            <!-- Todo List Items -->
-                            <div id="todo-list" class="space-y-1.5 overflow-y-auto max-h-[160px] pr-1 flex-grow">
-                                <!-- Dynamic Items -->
-                            </div>
-                        </div>
+      for(let i=0; i<firstDay; i++) {
+        grid.appendChild(document.createElement('div'));
+      }
 
-                        <!-- Notes Section -->
-                        <div class="border border-slate-200 rounded-2xl p-3 bg-slate-50/50">
-                            <h3 class="font-bold text-slate-700 text-xs sm:text-sm mb-2 flex items-center gap-1.5">
-                                <i data-lucide="file-text" class="w-4 h-4 text-amber-500"></i> 메모
-                            </h3>
-                            <textarea id="daily-notes" rows="4" placeholder="오늘의 피드백, 메모, 학습 일기 등..." class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none lined-paper text-slate-700" oninput="saveDailyData()"></textarea>
-                        </div>
+      for(let date=1; date<=lastDate; date++) {
+        const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+        const cell = document.createElement('div');
+        cell.className = "bg-white border border-slate-200 rounded-lg p-1.5 min-h-[90px] flex flex-col justify-between hover:border-indigo-400 cursor-pointer transition";
+        cell.onclick = () => openModal(dateStr);
 
-                    </div>
-                </div>
-            </section>
+        const top = document.createElement('div');
+        top.className = "font-bold text-xs text-slate-700";
+        top.innerText = date;
+        cell.appendChild(top);
 
-            <!-- ================= WEEKLY VIEW (COMPACT 7-COLUMN ONE-SCREEN PLANNER) ================= -->
-            <section id="view-weekly" class="tab-content hidden flex-col space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-medium text-slate-500 text-xs sm:text-sm">주간 선택</span>
-                        <input type="date" id="weekly-date" class="bg-slate-100 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold" onchange="loadWeeklyData()">
-                    </div>
-                    <span class="text-[11px] text-slate-400">월~일 7일 일정이 한 화면에 한눈에 들어오는 데스크형 종이 플래너입니다.</span>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="block text-[11px] font-semibold text-slate-400">이번 주 목표</label>
-                    <input type="text" id="weekly-goal" placeholder="이번 주 핵심 주간 목표..." class="w-full bg-slate-50 border-b border-slate-200 text-slate-800 text-xs sm:text-sm py-1 focus:outline-none focus:border-blue-500 transition-colors" oninput="saveWeeklyData()">
-                </div>
-
-                <!-- 7 Column One-Screen Planner Grid -->
-                <div class="overflow-x-auto pb-1">
-                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2 min-w-[700px] sm:min-w-0" id="weekly-7col-container">
-                        <!-- 7 days injected dynamically -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= MONTHLY VIEW (EXAM PERIOD MODE) ================= -->
-            <section id="view-monthly" class="tab-content hidden flex-col space-y-3">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-medium text-slate-500 text-xs sm:text-sm">월 선택</span>
-                        <input type="month" id="monthly-month" class="bg-slate-100 border border-slate-200 text-slate-800 text-xs sm:text-sm rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold" onchange="loadMonthlyData()">
-                    </div>
-                    <span class="text-[11px] text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 font-medium flex items-center gap-1">
-                        <i data-lucide="book-open" class="w-3.5 h-3.5"></i> 시험기간 과목 및 시험 일정 플래너
-                    </span>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="block text-[11px] font-semibold text-slate-400">이번 달 / 시험 기간 목표</label>
-                    <input type="text" id="monthly-goal" placeholder="시험 목표 또는 달성 목표 작성..." class="w-full bg-slate-50 border-b border-slate-200 text-slate-800 text-xs sm:text-sm py-1 focus:outline-none focus:border-blue-500 transition-colors" oninput="saveMonthlyData()">
-                </div>
-
-                <!-- Calendar View -->
-                <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm mt-1">
-                    <!-- Day Headers -->
-                    <div class="grid grid-cols-7 text-center font-bold text-xs bg-slate-100 text-slate-600 border-b border-slate-200 py-2">
-                        <div class="text-red-500">일</div>
-                        <div>월</div>
-                        <div>화</div>
-                        <div>수</div>
-                        <div>목</div>
-                        <div>금</div>
-                        <div class="text-blue-500">토</div>
-                    </div>
-
-                    <!-- Month Dates Grid -->
-                    <div id="monthly-calendar-grid" class="grid grid-cols-7 divide-x divide-y divide-slate-200 bg-slate-50">
-                        <!-- Dynamic Calendar cells -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= SUBJECT TRACKER VIEW ================= -->
-            <section id="view-subject" class="tab-content hidden flex-col space-y-4">
-                <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
-                    <div>
-                        <h2 class="text-sm sm:text-base font-bold text-slate-800">과목별 학습 스톱워치</h2>
-                        <p class="text-xs text-slate-400">과목별 공부 시간을 실시간으로 스톱워치 측정하고 분석하세요.</p>
-                    </div>
-                </div>
-
-                <!-- Add Subject Input -->
-                <div class="flex gap-2">
-                    <input type="text" id="new-subject-name" placeholder="새 과목 (예: 수학, 국어, 영어...)" class="flex-grow bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <button onclick="addSubject()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1">
-                        <i data-lucide="plus" class="w-4 h-4"></i> 추가
-                    </button>
-                </div>
-
-                <!-- Subject Cards Grid -->
-                <div id="subject-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <!-- Dynamic Subject Timers -->
-                </div>
-
-                <!-- Subject Time Summary Chart / Bar -->
-                <div class="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50 mt-2">
-                    <h3 class="font-bold text-slate-700 text-xs sm:text-sm mb-2.5 flex items-center gap-1.5">
-                        <i data-lucide="pie-chart" class="w-4 h-4 text-purple-500"></i> 과목별 학습 시간 비율
-                    </h3>
-                    <div id="subject-bars-container" class="space-y-2.5">
-                        <!-- Dynamic Bar Graph -->
-                    </div>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
-    <!-- Edit Daily Slot Modal -->
-    <div id="eventModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4">
-            <h3 class="text-base font-bold text-slate-800" id="modalTimeTitle">시간대 계획 설정</h3>
-            <input type="text" id="modalInput" placeholder="공부 과목 또는 할 일 입력..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 text-sm font-medium">취소</button>
-                <button onclick="saveModalSlot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium">저장</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Monthly Day Subject Modal (Exam Mode) -->
-    <div id="monthlyModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                <h3 class="text-base font-bold text-slate-800" id="monthlyModalTitle">날짜별 시험 공부 과목 설정</h3>
-                <button onclick="closeMonthlyModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
-            </div>
-            
-            <p class="text-xs text-slate-500">해당 날짜에 공부할 과목이나 시험 일정을 등록하세요.</p>
-            
-            <div class="flex gap-2">
-                <input type="text" id="monthlySubjectInput" placeholder="과목명 또는 시험명 (예: 수학 II, 영어)" class="flex-grow bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="addMonthlySubject()" class="bg-blue-600 text-white px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-500 transition-colors">추가</button>
-            </div>
-
-            <div id="monthlySubjectList" class="space-y-2 max-h-48 overflow-y-auto pt-1">
-                <!-- Subjects list injected here -->
-            </div>
-
-            <div class="flex justify-end pt-2 border-t border-slate-100">
-                <button onclick="closeMonthlyModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-700">완료</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Application Script Logic -->
-    <script>
-        const TODAY_STR = new Date().toISOString().split('T')[0];
-        let currentTab = 'daily';
-        let activeModalSlot = null;
-        let activeMonthlyDate = null;
-        let subjectTimerInterval = null;
-        let activeTimerSubjectId = null;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            setupManifestAndServiceWorker();
-            document.getElementById('daily-date').value = TODAY_STR;
-            document.getElementById('weekly-date').value = TODAY_STR;
-            document.getElementById('monthly-month').value = TODAY_STR.substring(0, 7);
-            
-            initDailyView();
-            initWeeklyView();
-            initMonthlyView();
-            initSubjectView();
-
-            lucide.createIcons();
+        const list = document.createElement('div');
+        list.className = "space-y-1 my-1 flex-1 overflow-hidden";
+        const subjects = store.monthly[dateStr] || [];
+        subjects.slice(0,3).forEach(s => {
+          const badge = document.createElement('div');
+          badge.className = "text-[10px] bg-rose-50 text-rose-600 font-medium px-1 rounded truncate border border-rose-100";
+          badge.innerText = s;
+          list.appendChild(badge);
         });
-
-        function setupManifestAndServiceWorker() {
-            const manifest = {
-                name: "스터디 플래너",
-                short_name: "플래너",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#f1f5f9",
-                theme_color: "#1e293b",
-                icons: [{
-                    src: "https://cdn-icons-png.flaticon.com/512/3652/3652191.png",
-                    sizes: "512x512",
-                    type: "image/png"
-                }]
-            };
-            const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-            document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(manifestBlob));
-
-            if ('serviceWorker' in navigator) {
-                const swCode = `
-                    const CACHE_NAME = 'study-planner-v3';
-                    self.addEventListener('install', (e) => self.skipWaiting());
-                    self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(
-                            fetch(e.request).catch(() => caches.match(e.request))
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW reg bypass:', err));
-            }
+        if(subjects.length > 3) {
+          const more = document.createElement('div');
+          more.className = "text-[9px] text-slate-400";
+          more.innerText = `+${subjects.length - 3}개`;
+          list.appendChild(more);
         }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-800', 'text-white', 'shadow');
-                btn.classList.add('text-slate-600');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-                content.classList.remove('flex');
-            });
-
-            const targetBtn = document.getElementById(`tab-${tab}`);
-            targetBtn.classList.add('bg-slate-800', 'text-white', 'shadow');
-            targetBtn.classList.remove('text-slate-600');
-
-            const targetView = document.getElementById(`view-${tab}`);
-            targetView.classList.remove('hidden');
-            targetView.classList.add('flex');
-
-            if (tab === 'weekly') loadWeeklyData();
-            if (tab === 'monthly') loadMonthlyData();
-            if (tab === 'subject') renderSubjects();
-            
-            lucide.createIcons();
-        }
-
-        /* ================= DAILY VIEW LOGIC ================= */
-        function initDailyView() {
-            buildTimeTableRows();
-            loadDailyData();
-        }
-
-        function buildTimeTableRows() {
-            const container = document.getElementById('timetable-container');
-            container.innerHTML = '';
-            
-            for (let hour = 6; hour <= 24; hour++) {
-                const hourStr = hour === 24 ? '00:00' : (hour < 10 ? '0' + hour : hour) + ':00';
-                const row = document.createElement('div');
-                row.className = 'flex items-center py-1.5 text-xs sm:text-sm border-b border-slate-100 hover:bg-slate-100/50 rounded-lg px-1 cursor-pointer transition-colors';
-                row.onclick = () => openModal(hourStr);
-                
-                row.innerHTML = `
-                    <span class="w-12 text-slate-400 font-mono text-xs font-semibold">${hourStr}</span>
-                    <div id="time-slot-${hourStr}" class="flex-grow font-medium text-slate-700 text-xs sm:text-sm pl-2 min-h-[1.1rem]"></div>
-                `;
-                container.appendChild(row);
-            }
-        }
-
-        function getDailyStorageKey(date) {
-            return `planner_daily_${date}`;
-        }
-
-        function loadDailyData() {
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const data = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-
-            document.getElementById('daily-goal').value = data.goal || '';
-            document.getElementById('daily-notes').value = data.notes || '';
-
-            for (let hour = 6; hour <= 24; hour++) {
-                const hourStr = hour === 24 ? '00:00' : (hour < 10 ? '0' + hour : hour) + ':00';
-                const slot = document.getElementById(`time-slot-${hourStr}`);
-                if (slot) slot.innerText = (data.timetable && data.timetable[hourStr]) ? data.timetable[hourStr] : '';
-            }
-
-            renderTodoList(data.todos || []);
-        }
-
-        function saveDailyData() {
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const currentData = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-
-            currentData.goal = document.getElementById('daily-goal').value;
-            currentData.notes = document.getElementById('daily-notes').value;
-
-            localStorage.setItem(getDailyStorageKey(date), JSON.stringify(currentData));
-        }
-
-        function openModal(timeStr) {
-            activeModalSlot = timeStr;
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const data = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-            const existingText = (data.timetable && data.timetable[timeStr]) || '';
-
-            document.getElementById('modalTimeTitle').innerText = `${timeStr} 일정`;
-            document.getElementById('modalInput').value = existingText;
-            document.getElementById('eventModal').classList.remove('hidden');
-            document.getElementById('modalInput').focus();
-        }
-
-        function closeModal() {
-            document.getElementById('eventModal').classList.add('hidden');
-            activeModalSlot = null;
-        }
-
-        function saveModalSlot() {
-            if (!activeModalSlot) return;
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const data = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-            if (!data.timetable) data.timetable = {};
-
-            const text = document.getElementById('modalInput').value.trim();
-            data.timetable[activeModalSlot] = text;
-
-            localStorage.setItem(getDailyStorageKey(date), JSON.stringify(data));
-            loadDailyData();
-            closeModal();
-        }
-
-        function renderTodoList(todos) {
-            const container = document.getElementById('todo-list');
-            container.innerHTML = '';
-            
-            let doneCount = 0;
-            todos.forEach((todo, idx) => {
-                if (todo.done) doneCount++;
-                const item = document.createElement('div');
-                item.className = 'flex items-center justify-between bg-white border border-slate-200 p-2 rounded-xl shadow-sm text-xs';
-                item.innerHTML = `
-                    <div class="flex items-center space-x-2 overflow-hidden">
-                        <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo(${idx})" class="w-3.5 h-3.5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer">
-                        <span class="${todo.done ? 'line-through text-slate-400' : 'text-slate-700'} truncate font-medium">${escapeHtml(todo.text)}</span>
-                    </div>
-                    <button onclick="deleteTodo(${idx})" class="text-slate-300 hover:text-red-500 p-0.5 transition-colors">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                `;
-                container.appendChild(item);
-            });
-
-            document.getElementById('todo-count').innerText = `${doneCount}/${todos.length}`;
-            lucide.createIcons();
-        }
-
-        function addTodo() {
-            const input = document.getElementById('todo-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const data = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-            if (!data.todos) data.todos = [];
-
-            data.todos.push({ text, done: false });
-            localStorage.setItem(getDailyStorageKey(date), JSON.stringify(data));
-
-            input.value = '';
-            renderTodoList(data.todos);
-        }
-
-        function toggleTodo(idx) {
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const data = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-            if (data.todos && data.todos[idx]) {
-                data.todos[idx].done = !data.todos[idx].done;
-                localStorage.setItem(getDailyStorageKey(date), JSON.stringify(data));
-                renderTodoList(data.todos);
-            }
-        }
-
-        function deleteTodo(idx) {
-            const date = document.getElementById('daily-date').value || TODAY_STR;
-            const data = JSON.parse(localStorage.getItem(getDailyStorageKey(date)) || '{}');
-            if (data.todos) {
-                data.todos.splice(idx, 1);
-                localStorage.setItem(getDailyStorageKey(date), JSON.stringify(data));
-                renderTodoList(data.todos);
-            }
-        }
-
-        /* ================= WEEKLY VIEW LOGIC (COMPACT 7-COLUMN ONE SCREEN PLANNER) ================= */
-        function initWeeklyView() {
-            loadWeeklyData();
-        }
-
-        function getWeeklyStorageKey(dateStr) {
-            return `planner_weekly_${dateStr}`;
-        }
-
-        function loadWeeklyData() {
-            const dateVal = document.getElementById('weekly-date').value || TODAY_STR;
-            const currDate = new Date(dateVal);
-            const dayOfWeek = currDate.getDay();
-            
-            const diffToMon = currDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            const monday = new Date(currDate.setDate(diffToMon));
-            const mondayIso = monday.toISOString().split('T')[0];
-
-            const weekData = JSON.parse(localStorage.getItem(getWeeklyStorageKey(mondayIso)) || '{}');
-            document.getElementById('weekly-goal').value = weekData.goal || '';
-
-            const dayTitles = ['월', '화', '수', '목', '금', '토', '일'];
-            const container = document.getElementById('weekly-7col-container');
-            container.innerHTML = '';
-
-            for (let i = 0; i < 7; i++) {
-                const cardDate = new Date(monday);
-                cardDate.setDate(monday.getDate() + i);
-                const dateIso = cardDate.toISOString().split('T')[0];
-                const dayTitle = dayTitles[i];
-
-                const dayText = (weekData.textData && weekData.textData[dateIso]) ? weekData.textData[dateIso] : '';
-
-                const col = document.createElement('div');
-                col.className = 'border border-slate-200 rounded-2xl bg-slate-50/80 p-2 flex flex-col justify-between h-[480px] shadow-sm';
-                
-                col.innerHTML = `
-                    <div class="flex flex-col h-full space-y-2">
-                        <!-- Column Header -->
-                        <div class="border-b border-slate-200 pb-1.5 text-center">
-                            <span class="font-bold text-xs ${i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-500' : 'text-slate-800'}">${dayTitle}</span>
-                            <span class="text-[10px] text-slate-400 block font-mono">${cardDate.getMonth()+1}/${cardDate.getDate()}</span>
-                            <button onclick="goToDailyDate('${dateIso}')" class="text-[10px] text-blue-600 font-medium hover:underline mt-0.5">
-                                일간 이동
-                            </button>
-                        </div>
-
-                        <!-- Direct Editable Text Area Planner Area -->
-                        <div class="flex-grow flex flex-col">
-                            <label class="text-[10px] font-semibold text-slate-400 mb-1">할 일 / 일품 내용</label>
-                            <textarea 
-                                oninput="saveWeeklyColText('${mondayIso}', '${dateIso}', this.value)" 
-                                placeholder="- 할 일 1&#10;- 할 일 2&#10;- 메모..." 
-                                class="w-full h-full bg-white border border-slate-200 rounded-xl p-2 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none lined-paper leading-relaxed"
-                            >${escapeHtml(dayText)}</textarea>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(col);
-            }
-        }
-
-        function saveWeeklyColText(mondayIso, dateIso, textValue) {
-            const weekData = JSON.parse(localStorage.getItem(getWeeklyStorageKey(mondayIso)) || '{}');
-            if (!weekData.textData) weekData.textData = {};
-            weekData.textData[dateIso] = textValue;
-            localStorage.setItem(getWeeklyStorageKey(mondayIso), JSON.stringify(weekData));
-        }
-
-        function saveWeeklyData() {
-            const dateVal = document.getElementById('weekly-date').value || TODAY_STR;
-            const currDate = new Date(dateVal);
-            const dayOfWeek = currDate.getDay();
-            const diffToMon = currDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-            const mondayIso = new Date(currDate.setDate(diffToMon)).toISOString().split('T')[0];
-
-            const weekData = JSON.parse(localStorage.getItem(getWeeklyStorageKey(mondayIso)) || '{}');
-            weekData.goal = document.getElementById('weekly-goal').value;
-            localStorage.setItem(getWeeklyStorageKey(mondayIso), JSON.stringify(weekData));
-        }
-
-        function goToDailyDate(dateIso) {
-            document.getElementById('daily-date').value = dateIso;
-            loadDailyData();
-            switchTab('daily');
-        }
-
-        /* ================= MONTHLY VIEW LOGIC (EXAM PERIOD MODE) ================= */
-        function initMonthlyView() {
-            loadMonthlyData();
-        }
-
-        function getMonthlyStorageKey(monthStr) {
-            return `planner_monthly_${monthStr}`;
-        }
-
-        function loadMonthlyData() {
-            const monthVal = document.getElementById('monthly-month').value || TODAY_STR.substring(0, 7);
-            const mData = JSON.parse(localStorage.getItem(getMonthlyStorageKey(monthVal)) || '{}');
-            document.getElementById('monthly-goal').value = mData.goal || '';
-
-            const [year, month] = monthVal.split('-').map(Number);
-            const firstDayIndex = new Date(year, month - 1, 1).getDay();
-            const daysInMonth = new Date(year, month, 0).getDate();
-
-            const grid = document.getElementById('monthly-calendar-grid');
-            grid.innerHTML = '';
-
-            let startOffset = firstDayIndex;
-
-            // Empty Leading Slots
-            for (let i = 0; i < startOffset; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = 'bg-slate-100/50 min-h-[85px] sm:min-h-[100px] p-1';
-                grid.appendChild(emptyCell);
-            }
-
-            // Fill Month Days
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayFormatted = day < 10 ? `0${day}` : `${day}`;
-                const fullDateIso = `${monthVal}-${dayFormatted}`;
-                
-                const subjects = (mData.daySubjects && mData.daySubjects[fullDateIso]) ? mData.daySubjects[fullDateIso] : [];
-
-                const cell = document.createElement('div');
-                cell.className = 'min-h-[85px] sm:min-h-[100px] p-1.5 bg-white cursor-pointer hover:bg-blue-50/50 transition-colors flex flex-col justify-between border-b border-r border-slate-100';
-                cell.onclick = (e) => {
-                    openMonthlyModal(fullDateIso);
-                };
-
-                const subjectBadgesHtml = subjects.map(s => `
-                    <span class="inline-block bg-blue-100 text-blue-800 text-[10px] font-semibold px-1.5 py-0.5 rounded-md truncate max-w-full border border-blue-200">
-                        ${escapeHtml(s)}
-                    </span>
-                `).join('');
-
-                cell.innerHTML = `
-                    <div class="space-y-1">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold ${new Date(fullDateIso).getDay() === 0 ? 'text-red-500' : new Date(fullDateIso).getDay() === 6 ? 'text-blue-500' : 'text-slate-700'}">${day}</span>
-                            ${subjects.length > 0 ? `<span class="text-[9px] text-slate-400 font-mono">${subjects.length}과목</span>` : ''}
-                        </div>
-                        <div class="flex flex-col gap-1 max-h-[60px] overflow-y-auto">
-                            ${subjectBadgesHtml}
-                        </div>
-                    </div>
-                    <span class="text-[9px] text-blue-500 font-semibold text-right block hover:underline mt-0.5">+ 과목/시험</span>
-                `;
-                grid.appendChild(cell);
-            }
-        }
-
-        function saveMonthlyData() {
-            const monthVal = document.getElementById('monthly-month').value || TODAY_STR.substring(0, 7);
-            const mData = JSON.parse(localStorage.getItem(getMonthlyStorageKey(monthVal)) || '{}');
-            mData.goal = document.getElementById('monthly-goal').value;
-            localStorage.setItem(getMonthlyStorageKey(monthVal), JSON.stringify(mData));
-        }
-
-        /* Monthly Exam Subjects Modal Logic */
-        function openMonthlyModal(dateIso) {
-            activeMonthlyDate = dateIso;
-            const monthVal = dateIso.substring(0, 7);
-            const mData = JSON.parse(localStorage.getItem(getMonthlyStorageKey(monthVal)) || '{}');
-            
-            document.getElementById('monthlyModalTitle').innerText = `${dateIso} 공부 과목 계획`;
-            renderMonthlySubjectList(mData.daySubjects && mData.daySubjects[dateIso] ? mData.daySubjects[dateIso] : []);
-            document.getElementById('monthlyModal').classList.remove('hidden');
-            document.getElementById('monthlySubjectInput').focus();
-        }
-
-        function closeMonthlyModal() {
-            document.getElementById('monthlyModal').classList.add('hidden');
-            activeMonthlyDate = null;
-            loadMonthlyData();
-        }
-
-        function renderMonthlySubjectList(subjects) {
-            const container = document.getElementById('monthlySubjectList');
-            container.innerHTML = '';
-
-            if (subjects.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">등록된 시험 과목이 없습니다.</p>`;
-                return;
-            }
-
-            subjects.forEach((subj, idx) => {
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700';
-                item.innerHTML = `
-                    <span>${escapeHtml(subj)}</span>
-                    <button onclick="removeMonthlySubject(${idx})" class="text-slate-300 hover:text-red-500 p-0.5">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                `;
-                container.appendChild(item);
-            });
-            lucide.createIcons();
-        }
-
-        function addMonthlySubject() {
-            if (!activeMonthlyDate) return;
-            const input = document.getElementById('monthlySubjectInput');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const monthVal = activeMonthlyDate.substring(0, 7);
-            const mData = JSON.parse(localStorage.getItem(getMonthlyStorageKey(monthVal)) || '{}');
-            if (!mData.daySubjects) mData.daySubjects = {};
-            if (!mData.daySubjects[activeMonthlyDate]) mData.daySubjects[activeMonthlyDate] = [];
-
-            mData.daySubjects[activeMonthlyDate].push(text);
-            localStorage.setItem(getMonthlyStorageKey(monthVal), JSON.stringify(mData));
-
-            input.value = '';
-            renderMonthlySubjectList(mData.daySubjects[activeMonthlyDate]);
-        }
-
-        function removeMonthlySubject(idx) {
-            if (!activeMonthlyDate) return;
-            const monthVal = activeMonthlyDate.substring(0, 7);
-            const mData = JSON.parse(localStorage.getItem(getMonthlyStorageKey(monthVal)) || '{}');
-            
-            if (mData.daySubjects && mData.daySubjects[activeMonthlyDate]) {
-                mData.daySubjects[activeMonthlyDate].splice(idx, 1);
-                localStorage.setItem(getMonthlyStorageKey(monthVal), JSON.stringify(mData));
-                renderMonthlySubjectList(mData.daySubjects[activeMonthlyDate]);
-            }
-        }
-
-        /* ================= SUBJECT TRACKER LOGIC ================= */
-        function initSubjectView() {
-            renderSubjects();
-        }
-
-        function getSubjectsFromStorage() {
-            return JSON.parse(localStorage.getItem('planner_subjects') || '[]');
-        }
-
-        function saveSubjectsToStorage(subjects) {
-            localStorage.setItem('planner_subjects', JSON.stringify(subjects));
-        }
-
-        function addSubject() {
-            const input = document.getElementById('new-subject-name');
-            const name = input.value.trim();
-            if (!name) return;
-
-            const subjects = getSubjectsFromStorage();
-            subjects.push({
-                id: Date.now(),
-                name: name,
-                seconds: 0
-            });
-
-            saveSubjectsToStorage(subjects);
-            input.value = '';
-            renderSubjects();
-        }
-
-        function deleteSubject(id) {
-            if (activeTimerSubjectId === id) stopTimer();
-            let subjects = getSubjectsFromStorage();
-            subjects = subjects.filter(s => s.id !== id);
-            saveSubjectsToStorage(subjects);
-            renderSubjects();
-        }
-
-        function toggleTimer(id) {
-            if (activeTimerSubjectId === id) {
-                stopTimer();
-            } else {
-                if (activeTimerSubjectId) stopTimer();
-                startTimer(id);
-            }
-            renderSubjects();
-        }
-
-        function startTimer(id) {
-            activeTimerSubjectId = id;
-            subjectTimerInterval = setInterval(() => {
-                const subjects = getSubjectsFromStorage();
-                const subj = subjects.find(s => s.id === id);
-                if (subj) {
-                    subj.seconds += 1;
-                    saveSubjectsToStorage(subjects);
-                    renderSubjects(false);
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            clearInterval(subjectTimerInterval);
-            activeTimerSubjectId = null;
-            renderSubjects();
-        }
-
-        function formatTime(totalSec) {
-            const h = Math.floor(totalSec / 3600);
-            const m = Math.floor((totalSec % 3600) / 60);
-            const s = totalSec % 60;
-            return `${h < 10 ? '0'+h : h}:${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-        }
-
-        function renderSubjects(full = true) {
-            const subjects = getSubjectsFromStorage();
-            const container = document.getElementById('subject-list');
-            
-            if (full) container.innerHTML = '';
-
-            let totalSecAll = subjects.reduce((acc, s) => acc + s.seconds, 0);
-
-            subjects.forEach(subj => {
-                const isRunning = activeTimerSubjectId === subj.id;
-                
-                if (full) {
-                    const card = document.createElement('div');
-                    card.id = `subj-card-${subj.id}`;
-                    card.className = `border rounded-2xl p-3.5 flex flex-col justify-between transition-all ${isRunning ? 'border-blue-500 bg-blue-50/30 ring-2 ring-blue-500/20' : 'border-slate-200 bg-white'}`;
-                    
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-xs sm:text-sm text-slate-800">${escapeHtml(subj.name)}</span>
-                            <button onclick="deleteSubject(${subj.id})" class="text-slate-300 hover:text-red-500 transition-colors">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                        <div class="text-xl sm:text-2xl font-mono font-bold ${isRunning ? 'text-blue-600' : 'text-slate-700'} my-2 text-center" id="timer-display-${subj.id}">
-                            ${formatTime(subj.seconds)}
-                        </div>
-                        <button onclick="toggleTimer(${subj.id})" class="w-full py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${isRunning ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}">
-                            <i data-lucide="${isRunning ? 'pause' : 'play'}" class="w-3.5 h-3.5"></i>
-                            ${isRunning ? '일시정지' : '학습 시작'}
-                        </button>
-                    `;
-                    container.appendChild(card);
-                } else {
-                    const display = document.getElementById(`timer-display-${subj.id}`);
-                    if (display) display.innerText = formatTime(subj.seconds);
-                }
-            });
-
-            renderSubjectBars(subjects, totalSecAll);
-            if (full) lucide.createIcons();
-        }
-
-        function renderSubjectBars(subjects, totalSecAll) {
-            const container = document.getElementById('subject-bars-container');
-            container.innerHTML = '';
-
-            if (subjects.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">등록된 과목이 없습니다.</p>`;
-                return;
-            }
-
-            subjects.forEach(s => {
-                const percent = totalSecAll > 0 ? Math.round((s.seconds / totalSecAll) * 100) : 0;
-                const row = document.createElement('div');
-                row.className = 'space-y-1';
-                row.innerHTML = `
-                    <div class="flex justify-between text-xs font-semibold text-slate-600">
-                        <span>${escapeHtml(s.name)}</span>
-                        <span>${formatTime(s.seconds)} (${percent}%)</span>
-                    </div>
-                    <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500 transition-all duration-300" style="width: ${percent}%"></div>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        function escapeHtml(text) {
-            return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installBanner').classList.remove('hidden');
-        });
-
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('installBanner').classList.add('hidden');
-                }
-                deferredPrompt = null;
-            }
-        });
-
-        function dismissInstallBanner() {
-            document.getElementById('installBanner').classList.add('hidden');
-        }
-    </script>
+        cell.appendChild(list);
+        grid.appendChild(cell);
+      }
+    }
+
+    function openModal(dateStr) {
+      selectedModalDate = dateStr;
+      document.getElementById('modal-date-title').innerText = `${dateStr} 시험 공부 과목`;
+      document.getElementById('exam-modal').classList.remove('hidden');
+      renderModalSubjects();
+    }
+
+    function closeModal() { document.getElementById('exam-modal').classList.add('hidden'); }
+
+    function addExamSubject() {
+      const input = document.getElementById('modal-subject-input');
+      if(!input.value.trim()) return;
+      store.monthly[selectedModalDate] = store.monthly[selectedModalDate] || [];
+      store.monthly[selectedModalDate].push(input.value.trim());
+      input.value = '';
+      saveStore();
+      renderModalSubjects();
+      loadMonthlyView();
+    }
+
+    function renderModalSubjects() {
+      const list = document.getElementById('modal-subject-list');
+      list.innerHTML = '';
+      const subjects = store.monthly[selectedModalDate] || [];
+      subjects.forEach((s, idx) => {
+        const li = document.createElement('li');
+        li.className = "flex items-center justify-between bg-slate-50 p-2 rounded text-xs border border-slate-200";
+        li.innerHTML = `<span>${s}</span><button onclick="deleteExamSubject(${idx})" class="text-rose-500 font-bold">✕</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    function deleteExamSubject(idx) {
+      store.monthly[selectedModalDate].splice(idx, 1);
+      saveStore();
+      renderModalSubjects();
+      loadMonthlyView();
+    }
+
+    // --- SUBJECTS & TIMER LOGIC ---
+    function addSubject() {
+      const name = document.getElementById('new-subject-name').value.trim();
+      const color = document.getElementById('new-subject-color').value;
+      if(!name) return;
+      store.subjects.push({ id: Date.now(), name, color, time: 0 });
+      document.getElementById('new-subject-name').value = '';
+      saveStore();
+      renderSubjects();
+    }
+
+    function renderSubjects() {
+      const container = document.getElementById('subjects-list');
+      container.innerHTML = '';
+      store.subjects.forEach(sub => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-3 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between";
+        card.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full" style="background-color:${sub.color}"></span>
+            <span class="font-bold text-sm text-slate-800">${sub.name}</span>
+          </div>
+          <button onclick="deleteSubject(${sub.id})" class="text-xs text-slate-400 hover:text-rose-500">삭제</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function deleteSubject(id) {
+      store.subjects = store.subjects.filter(s => s.id !== id);
+      saveStore();
+      renderSubjects();
+    }
+
+    // Initialize Page
+    window.onload = () => { initDaily(); };
+  </script>
 </body>
 </html>
