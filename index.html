@@ -35,7 +35,7 @@
   </header>
 
   <!-- Main View Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 overflow-x-hidden">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 pb-12 overflow-y-auto">
 
     <!-- DAILY VIEW -->
     <section id="view-daily" class="space-y-4">
@@ -46,7 +46,7 @@
         </div>
         <div class="flex-1 min-w-[240px]">
           <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">🎯 주간 연동 목표</span>
+            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shrink-0">🎯 주간 연동 목표</span>
             <input type="text" id="daily-target" placeholder="오늘 이룰 목표를 적으세요..." oninput="saveDailyTarget()" class="w-full text-sm font-medium border-b border-slate-300 focus:border-indigo-500 focus:outline-none py-1 bg-transparent">
           </div>
         </div>
@@ -59,12 +59,12 @@
             <span class="flex items-center gap-1.5">🕒 시간표 (06:00 ~ 00:00)</span>
             <span class="text-[11px] font-normal text-slate-500">🔁 체크 시 매주 요일 반복</span>
           </h3>
-          <div id="timetable-list" class="space-y-1.5 max-h-[550px] overflow-y-auto pr-1"></div>
+          <div id="timetable-list" class="space-y-1.5 max-h-[500px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- To-Do & Notes -->
         <div class="lg:col-span-7 flex flex-col gap-4">
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex-1">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
             <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
               <span>✅ 오늘 할 일 (To-Do)</span>
               <span id="todo-stats" class="text-xs font-normal text-slate-500">0/0 완료</span>
@@ -78,7 +78,7 @@
 
           <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
             <h3 class="font-bold text-slate-800 text-sm mb-2">📝 메모</h3>
-            <textarea id="daily-memo" oninput="saveDailyMemo()" rows="5" placeholder="공부 일지, 피드백, 메모 작성..." class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+            <textarea id="daily-memo" oninput="saveDailyMemo()" rows="6" placeholder="공부 일지, 피드백, 메모 작성..." class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
           </div>
         </div>
       </div>
@@ -86,28 +86,29 @@
 
     <!-- WEEKLY VIEW -->
     <section id="view-weekly" class="hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2">
           <span class="text-sm font-semibold text-slate-600">주간 기준일:</span>
           <input type="date" id="weekly-date" onchange="loadWeeklyView()" class="bg-slate-100 font-bold text-slate-800 px-3 py-1.5 rounded-lg border border-slate-300 text-sm">
         </div>
-        <span class="text-xs text-slate-500 font-medium">✨ 한눈에 보는 7일 계획</span>
+        <span class="text-xs text-slate-500 font-medium">👉 모바일에서는 옆으로 슬라이드해서 7일을 확인해보세요</span>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+      <!-- Scrollable Weekly Card Strip for Mobile, Grid for Desktop -->
+      <div class="flex lg:grid lg:grid-cols-7 gap-3 overflow-x-auto pb-4 pt-1 hide-scrollbar">
         <template id="weekly-day-template">
-          <div class="day-card bg-white rounded-xl shadow-sm border border-slate-200/80 p-2.5 flex flex-col h-[520px]">
-            <div class="flex items-center justify-between border-b pb-1.5 mb-2">
+          <div class="day-card min-w-[280px] lg:min-w-0 bg-white rounded-xl shadow-sm border border-slate-200/80 p-3 flex flex-col h-[560px]">
+            <div class="flex items-center justify-between border-b pb-2 mb-2">
               <div class="day-title font-bold text-sm text-slate-800">월 (10/19)</div>
-              <button class="go-daily-btn text-[10px] bg-slate-100 hover:bg-indigo-50 text-indigo-600 font-semibold px-1.5 py-0.5 rounded">일간보기</button>
+              <button class="go-daily-btn text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-2 py-1 rounded-md transition">일간보기 ➔</button>
             </div>
             <div class="mb-2">
-              <label class="text-[11px] font-bold text-indigo-600 block mb-0.5">🎯 목표</label>
-              <textarea class="weekly-target w-full text-xs p-1.5 bg-indigo-50/50 border border-indigo-100 rounded focus:outline-none resize-none" rows="2" placeholder="목표 입력..."></textarea>
+              <label class="text-xs font-bold text-indigo-600 block mb-1">🎯 요일 목표</label>
+              <textarea class="weekly-target w-full text-xs p-2 bg-indigo-50/50 border border-indigo-100 rounded-lg focus:outline-none focus:bg-white resize-none" rows="2" placeholder="목표 입력..."></textarea>
             </div>
             <div class="flex-1 flex flex-col overflow-hidden">
-              <label class="text-[11px] font-bold text-slate-600 block mb-0.5">📝 주간 할 일 / 계획</label>
-              <textarea class="weekly-notes w-full flex-1 text-xs p-2 bg-slate-50 border border-slate-200 rounded focus:outline-none resize-none leading-relaxed" placeholder="- 과목 공부&#10;- 학원 수업"></textarea>
+              <label class="text-xs font-bold text-slate-600 block mb-1">📝 요일 할 일 / 공부 계획</label>
+              <textarea class="weekly-notes w-full flex-1 text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white resize-none leading-relaxed" placeholder="- 국어 문제집 2회차&#10;- 수학 인강 시청&#10;- 영단어 암기"></textarea>
             </div>
           </div>
         </template>
@@ -135,7 +136,7 @@
     <!-- SUBJECTS & TIMER -->
     <section id="view-subjects" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-        <h3 class="font-bold text-slate-800 text-sm mb-3">📚 과목 추가 및 타이머</h3>
+        <h3 class="font-bold text-slate-800 text-sm mb-3">📚 과목 추가 및 관리</h3>
         <div class="flex gap-2 mb-4">
           <input type="text" id="new-subject-name" placeholder="과목명 (예: 수학 II)" class="flex-1 text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none">
           <input type="color" id="new-subject-color" value="#4f46e5" class="w-10 h-9 p-0.5 border border-slate-300 rounded-lg cursor-pointer">
@@ -225,8 +226,8 @@
           <span class="w-11 font-semibold text-slate-400">${h}</span>
           <input type="text" value="${displayVal}" placeholder="일정 입력..." 
             onchange="saveTimeSlot('${date}', '${key}', this.value)"
-            class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:bg-white focus:outline-none ${isRoutine ? 'text-indigo-600 italic' : ''}">
-          <label class="flex items-center gap-0.5 text-[10px] text-slate-400 cursor-pointer">
+            class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:bg-white focus:outline-none ${isRoutine ? 'text-indigo-600 italic font-medium' : ''}">
+          <label class="flex items-center gap-0.5 text-[10px] text-slate-400 cursor-pointer shrink-0">
             <input type="checkbox" ${routineVal ? 'checked' : ''} onchange="toggleRoutine(${dayIdx}, '${key}', this)" class="rounded text-indigo-600"> 반복
           </label>
         `;
@@ -456,12 +457,12 @@
       loadMonthlyView();
     }
 
-    // --- SUBJECTS & TIMER LOGIC ---
+    // --- SUBJECTS LOGIC ---
     function addSubject() {
       const name = document.getElementById('new-subject-name').value.trim();
       const color = document.getElementById('new-subject-color').value;
       if(!name) return;
-      store.subjects.push({ id: Date.now(), name, color, time: 0 });
+      store.subjects.push({ id: Date.now(), name, color });
       document.getElementById('new-subject-name').value = '';
       saveStore();
       renderSubjects();
@@ -490,7 +491,6 @@
       renderSubjects();
     }
 
-    // Initialize Page
     window.onload = () => { initDaily(); };
   </script>
 </body>
